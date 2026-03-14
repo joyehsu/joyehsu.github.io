@@ -1,0 +1,119 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application, either a student or a parent.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["student", "parent", "admin"],
+          "description": "The user's role."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the user was created."
+        }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "LearningSession": {
+      "title": "Learning Session",
+      "description": "A record of a student's learning session, including generated words and test results.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who completed the session."
+        },
+        "topic": {
+          "type": "string",
+          "description": "The topic of the learning session."
+        },
+        "level": {
+          "type": "string",
+          "description": "The difficulty level of the session."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the session was completed."
+        },
+        "words": {
+          "type": "array",
+          "description": "The list of words learned in this session.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "word": { "type": "string" },
+              "translation": { "type": "string" },
+              "partOfSpeech": { "type": "string" },
+              "exampleSentence": { "type": "string" },
+              "exampleTranslation": { "type": "string" }
+            }
+          }
+        },
+        "speakingResults": {
+          "type": "array",
+          "description": "The results of the speaking test.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "word": { "type": "string" },
+              "speakingScore": { "type": "number" },
+              "speakingFeedback": { "type": "string" }
+            }
+          }
+        },
+        "writtenResults": {
+          "type": "array",
+          "description": "The results of the written test.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "word": { "type": "string" },
+              "writtenCorrect": { "type": "boolean" }
+            }
+          }
+        },
+        "writtenScore": {
+          "type": "number",
+          "description": "The overall score for the written test."
+        },
+        "avgSpeakingScore": {
+          "type": "number",
+          "description": "The average score for the speaking test."
+        }
+      },
+      "required": ["userId", "topic", "level", "createdAt", "words", "speakingResults", "writtenResults", "writtenScore", "avgSpeakingScore"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user profiles."
+    },
+    "/sessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/LearningSession"
+      },
+      "description": "Stores learning session records."
+    }
+  }
+}

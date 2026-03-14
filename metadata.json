@@ -1,0 +1,5 @@
+{
+  "name": "AI Vocabulary Tutor",
+  "description": "iPad-friendly English vocabulary tutor with voice teaching, speaking tests, and parent reports.",
+  "requestFramePermissions": ["microphone", "camera"]
+}
