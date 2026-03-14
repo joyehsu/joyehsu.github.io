@@ -239,7 +239,7 @@ export function SpeakingScreen({ words, onComplete }: Props) {
               onClick={handleFinish}
               className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-700 transition-colors"
             >
-              查看最終成績
+              接續筆試
             </button>
           </motion.div>
         ) : (

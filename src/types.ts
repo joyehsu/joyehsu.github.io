@@ -31,3 +31,11 @@ export interface TestResult {
 }
 
 export type AppMode = 'setup' | 'learning' | 'speaking' | 'written' | 'report';
+
+export interface CustomList {
+  id: string;
+  title: string;
+  source: 'image' | 'text';
+  words: Word[];
+  createdAt: number;
+}

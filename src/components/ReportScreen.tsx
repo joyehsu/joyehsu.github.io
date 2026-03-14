@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
-import { Award, RotateCcw, Lock, CheckCircle2, XCircle } from 'lucide-react';
+import { Award, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
 import { TestResult, Word } from '../types';
 
 interface Props {
@@ -11,50 +11,6 @@ interface Props {
 }
 
 export function ReportScreen({ words, speakingResults, writtenResults, onRestart }: Props) {
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const [pin, setPin] = useState('');
-
-  const handleUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pin === '1234') { // Simple PIN for demo
-      setIsUnlocked(true);
-    } else {
-      alert('密碼錯誤 (提示: 1234)');
-      setPin('');
-    }
-  };
-
-  if (!isUnlocked) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full max-w-md mx-auto p-6">
-        <div className="bg-white rounded-3xl shadow-xl p-10 w-full text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-amber-100 rounded-full mb-6">
-            <Lock className="w-10 h-10 text-amber-600" />
-          </div>
-          <h2 className="text-3xl font-bold text-slate-800 mb-2">家長檢核區</h2>
-          <p className="text-slate-500 mb-8">請輸入家長密碼以查看學習報告</p>
-          
-          <form onSubmit={handleUnlock} className="space-y-6">
-            <input
-              type="password"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="輸入密碼 (1234)"
-              className="w-full text-center text-3xl tracking-widest p-4 border-2 border-slate-200 rounded-2xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none"
-              maxLength={4}
-            />
-            <button 
-              type="submit"
-              className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white text-xl font-bold rounded-2xl shadow-lg shadow-amber-200 transition-all"
-            >
-              解鎖報告
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
   // Calculate scores
   const totalWords = words.length;
   const writtenCorrectCount = writtenResults.filter(r => r.writtenCorrect).length;

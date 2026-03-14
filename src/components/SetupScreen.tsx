@@ -1,14 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BookOpen, Loader2, Camera, Upload, Image as ImageIcon, X } from 'lucide-react';
+import { BookOpen, Loader2, Camera, Upload, Image as ImageIcon, X, History } from 'lucide-react';
 import { Word } from '../types';
 import { generateVocabulary, extractWordsFromImage, extractWordsFromText } from '../services/gemini';
+import { saveCustomList } from '../services/history';
+import { HistoryTab } from './HistoryTab';
 
 interface Props {
   onStart: (words: Word[], topic: string, level: string) => void;
 }
 
 export function SetupScreen({ onStart }: Props) {
-  const [inputMode, setInputMode] = useState<'topic' | 'image' | 'text'>('topic');
+  const [inputMode, setInputMode] = useState<'topic' | 'image' | 'text' | 'history'>('topic');
   const [topic, setTopic] = useState('學校生活與文具');
   const [level, setLevel] = useState('國一上學期');
   const [count, setCount] = useState(10);
@@ -109,24 +111,28 @@ export function SetupScreen({ onStart }: Props) {
       } else if (inputMode === 'image' && selectedImage && imagePreview) {
         const base64Data = imagePreview.split(',')[1];
         words = await extractWordsFromImage(base64Data, selectedImage.type, count);
-        finalTopic = '從圖片擷取的單字';
-        finalLevel = '自訂單字表';
         
         if (words.length === 0) {
           alert('無法從圖片中辨識出任何英文單字，請重新拍攝或上傳更清晰的照片。');
           setIsLoading(false);
           return;
         }
+        
+        const savedList = saveCustomList('image', words);
+        finalTopic = savedList.title;
+        finalLevel = '自訂單字表';
       } else if (inputMode === 'text' && customText.trim()) {
         words = await extractWordsFromText(customText, count);
-        finalTopic = '手動輸入的單字';
-        finalLevel = '自訂單字表';
         
         if (words.length === 0) {
           alert('無法從文字中辨識出任何英文單字，請重新輸入。');
           setIsLoading(false);
           return;
         }
+        
+        const savedList = saveCustomList('text', words);
+        finalTopic = savedList.title;
+        finalLevel = '自訂單字表';
       }
 
       onStart(words, finalTopic, finalLevel);
@@ -150,10 +156,10 @@ export function SetupScreen({ onStart }: Props) {
         </div>
 
         {/* Input Mode Tabs */}
-        <div className="flex p-1 bg-slate-100 rounded-xl">
+        <div className="flex p-1 bg-slate-100 rounded-xl overflow-x-auto">
           <button
             onClick={() => setInputMode('topic')}
-            className={`flex-1 py-3 text-sm sm:text-base font-medium rounded-lg transition-all ${
+            className={`flex-1 py-3 px-2 text-sm sm:text-base font-medium rounded-lg transition-all whitespace-nowrap ${
               inputMode === 'topic' 
                 ? 'bg-white text-indigo-600 shadow-sm' 
                 : 'text-slate-500 hover:text-slate-700'
@@ -163,7 +169,7 @@ export function SetupScreen({ onStart }: Props) {
           </button>
           <button
             onClick={() => setInputMode('image')}
-            className={`flex-1 py-3 text-sm sm:text-base font-medium rounded-lg transition-all ${
+            className={`flex-1 py-3 px-2 text-sm sm:text-base font-medium rounded-lg transition-all whitespace-nowrap ${
               inputMode === 'image' 
                 ? 'bg-white text-indigo-600 shadow-sm' 
                 : 'text-slate-500 hover:text-slate-700'
@@ -173,7 +179,7 @@ export function SetupScreen({ onStart }: Props) {
           </button>
           <button
             onClick={() => setInputMode('text')}
-            className={`flex-1 py-3 text-sm sm:text-base font-medium rounded-lg transition-all ${
+            className={`flex-1 py-3 px-2 text-sm sm:text-base font-medium rounded-lg transition-all whitespace-nowrap ${
               inputMode === 'text' 
                 ? 'bg-white text-indigo-600 shadow-sm' 
                 : 'text-slate-500 hover:text-slate-700'
@@ -181,10 +187,23 @@ export function SetupScreen({ onStart }: Props) {
           >
             手動輸入
           </button>
+          <button
+            onClick={() => setInputMode('history')}
+            className={`flex-1 py-3 px-2 text-sm sm:text-base font-medium rounded-lg transition-all whitespace-nowrap flex items-center justify-center gap-1 ${
+              inputMode === 'history' 
+                ? 'bg-white text-indigo-600 shadow-sm' 
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <History className="w-4 h-4" />
+            歷史紀錄
+          </button>
         </div>
 
         <div className="space-y-6">
-          {inputMode === 'topic' ? (
+          {inputMode === 'history' ? (
+            <HistoryTab onStartTest={onStart} />
+          ) : inputMode === 'topic' ? (
             <>
               <div>
                 <label className="block text-lg font-medium text-slate-700 mb-2">年級、能力或課文範圍</label>
@@ -302,35 +321,39 @@ export function SetupScreen({ onStart }: Props) {
             </div>
           )}
 
-          <div>
-            <label className="block text-lg font-medium text-slate-700 mb-2">
-              {inputMode === 'topic' ? '單字數量' : '最多擷取單字數'} ({count} 個)
-            </label>
-            <input 
-              type="range" 
-              min="3" 
-              max="20" 
-              value={count}
-              onChange={(e) => setCount(parseInt(e.target.value))}
-              className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-            />
-          </div>
+          {inputMode !== 'history' && (
+            <div>
+              <label className="block text-lg font-medium text-slate-700 mb-2">
+                {inputMode === 'topic' ? '單字數量' : '最多擷取單字數'} ({count} 個)
+              </label>
+              <input 
+                type="range" 
+                min="3" 
+                max="20" 
+                value={count}
+                onChange={(e) => setCount(parseInt(e.target.value))}
+                className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              />
+            </div>
+          )}
         </div>
 
-        <button 
-          onClick={handleStart}
-          disabled={isLoading || (inputMode === 'image' && !selectedImage) || (inputMode === 'text' && !customText.trim())}
-          className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-500 text-white text-2xl font-bold rounded-2xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-8 h-8 animate-spin" />
-              <span>{inputMode === 'image' ? '正在辨識單字...' : inputMode === 'text' ? '正在處理單字...' : '正在產生單字...'}</span>
-            </>
-          ) : (
-            '開始學習'
-          )}
-        </button>
+        {inputMode !== 'history' && (
+          <button 
+            onClick={handleStart}
+            disabled={isLoading || (inputMode === 'image' && !selectedImage) || (inputMode === 'text' && !customText.trim())}
+            className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-500 text-white text-2xl font-bold rounded-2xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-8 h-8 animate-spin" />
+                <span>{inputMode === 'image' ? '正在辨識單字...' : inputMode === 'text' ? '正在處理單字...' : '正在產生單字...'}</span>
+              </>
+            ) : (
+              '開始學習'
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
