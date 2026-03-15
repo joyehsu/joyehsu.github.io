@@ -1,0 +1,69 @@
+const CALENDAR_NAME = '📖 AI 單字學習紀錄';
+
+export async function getOrCreateCalendar(accessToken: string): Promise<string> {
+  // 1. List calendars
+  const listRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  
+  if (!listRes.ok) {
+    throw new Error('Failed to list calendars');
+  }
+  
+  const listData = await listRes.json();
+  const existing = listData.items?.find((c: any) => c.summary === CALENDAR_NAME);
+  
+  if (existing) {
+    return existing.id;
+  }
+
+  // 2. Create calendar
+  const createRes = await fetch('https://www.googleapis.com/calendar/v3/calendars', {
+    method: 'POST',
+    headers: { 
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ summary: CALENDAR_NAME })
+  });
+  
+  if (!createRes.ok) {
+    throw new Error('Failed to create calendar');
+  }
+  
+  const createData = await createRes.json();
+  return createData.id;
+}
+
+export async function addTestResultToCalendar(
+  accessToken: string, 
+  calendarId: string, 
+  topic: string,
+  score: number, 
+  mistakes: string[]
+) {
+  const now = new Date();
+  const endTime = new Date(now.getTime() + 30 * 60000); // 30 mins duration
+
+  const description = `測驗主題: ${topic}\n分數: ${score}分\n\n需要加強的單字:\n${mistakes.length > 0 ? mistakes.join('\n') : '全對！太棒了！'}`;
+
+  const event = {
+    summary: `單字測驗: ${topic} - 成績: ${score}分`,
+    description: description,
+    start: { dateTime: now.toISOString() },
+    end: { dateTime: endTime.toISOString() },
+  };
+
+  const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`, {
+    method: 'POST',
+    headers: { 
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(event)
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to add event to calendar');
+  }
+}

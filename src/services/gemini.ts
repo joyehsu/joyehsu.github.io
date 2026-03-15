@@ -1,9 +1,12 @@
 import { GoogleGenAI, Type, Modality, LiveServerMessage } from "@google/genai";
 import { Word, TestQuestion, MultipleChoiceQuestion, FillInTheBlankQuestion } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+function getAI() {
+  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+}
 
 export async function generateVocabulary(topic: string, level: string, count: number): Promise<Word[]> {
+  const ai = getAI();
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `你是一位專業的英語老師。請根據『${level}，主題：${topic}』，產生 ${count} 個必背單字。請以 JSON 格式回覆，包含欄位：word (英文單字), pos (詞性), meaning (繁體中文解釋), exampleSentence (英文例句), exampleTranslation (例句中文翻譯)。`,
@@ -38,7 +41,7 @@ export async function generateVocabulary(topic: string, level: string, count: nu
 }
 
 export async function extractWordsFromImage(base64Data: string, mimeType: string, count: number): Promise<Word[]> {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: [
       {
@@ -87,7 +90,7 @@ export async function extractWordsFromImage(base64Data: string, mimeType: string
 }
 
 export async function extractWordsFromText(text: string, count: number): Promise<Word[]> {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `請從以下文字中擷取英文單字。請回傳一個 JSON 陣列，包含最多 ${count} 個單字。
       每個單字物件必須包含以下欄位：
@@ -130,8 +133,52 @@ export async function extractWordsFromText(text: string, count: number): Promise
   }));
 }
 
+export async function fillWordDetails(words: string[]): Promise<Word[]> {
+  if (words.length === 0) return [];
+  
+  const response = await getAI().models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: `請為以下英文單字提供繁體中文翻譯、詞性、一個簡單實用的英文例句，以及例句的繁體中文翻譯。
+      請以 JSON 陣列格式回傳，每個單字物件必須包含以下欄位：
+      - word: 英文單字
+      - meaning: 繁體中文翻譯
+      - pos: 詞性 (例如 n., v., adj.)
+      - exampleSentence: 一句簡單的英文例句
+      - exampleTranslation: 例句的繁體中文翻譯
+      
+      單字列表：
+      ${words.join('\n')}`,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            word: { type: Type.STRING },
+            meaning: { type: Type.STRING, description: "Traditional Chinese translation" },
+            pos: { type: Type.STRING },
+            exampleSentence: { type: Type.STRING },
+            exampleTranslation: { type: Type.STRING, description: "Traditional Chinese translation of the example sentence" }
+          },
+          required: ["word", "meaning", "pos", "exampleSentence", "exampleTranslation"]
+        }
+      }
+    }
+  });
+
+  const rawData = JSON.parse(response.text || "[]");
+  return rawData.map((item: any) => ({
+    word: item.word,
+    translation: item.meaning,
+    partOfSpeech: item.pos,
+    exampleSentence: item.exampleSentence,
+    exampleTranslation: item.exampleTranslation
+  }));
+}
+
 export async function generateTeacherScript(word: string, meaning: string): Promise<string> {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `你是一位親切的英文家教。現在要教的單字是 '${word}' (${meaning})。請產生一段簡短的教學口白，必須包含：1. 唸出單字兩次、2. 唸出拼字、3. 簡單解釋、4. 造一個生活化的英文例句並附上中文翻譯。請以純文字回覆，方便語音系統朗讀。`,
   });
@@ -147,7 +194,7 @@ export async function generateAudio(text: string): Promise<string | undefined> {
   if (!cleanText) return undefined;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: `Please read the following text aloud exactly as written, do not answer it: ${cleanText}` }] }],
       config: {
@@ -178,7 +225,7 @@ export async function evaluateSpeakingDialog(word: string, meaning: string, stud
   5. 回覆務必極度簡短、直接，絕不說廢話。
   6. 純文字回覆，無 Markdown。`;
 
-  const chat = ai.chats.create({
+  const chat = getAI().chats.create({
     model: "gemini-3-flash-preview",
     config: {
       systemInstruction,
@@ -200,7 +247,6 @@ export async function startLiveSpeakingSession(
   onInterrupted: () => void,
   onTestFinished: (score: number, feedback: string) => void
 ) {
-  const freshAi = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const wordListStr = words.map(w => `${w.word} (${w.translation})`).join(', ');
   const systemInstruction = `你現在是一位充滿熱情、有耐心且專為台灣學生設計的英文口說家教「Teacher Gemini」。 我們現在要進行「即時語音單字測驗」。
 
@@ -229,8 +275,8 @@ export async function startLiveSpeakingSession(
 
 【對話開場】 請主動熱情地打招呼，介紹自己，並直接開始測驗第一個單字（記得只說中文解釋）。`;
 
-  const sessionPromise = freshAi.live.connect({
-    model: "gemini-2.5-flash-native-audio-preview-09-2025",
+  const sessionPromise = getAI().live.connect({
+    model: "gemini-2.5-flash-native-audio-preview-12-2025",
     callbacks: {
       onopen: () => {
         console.log("Live session opened");
@@ -303,7 +349,7 @@ export async function startLiveSpeakingSession(
 
 
 export async function evaluatePronunciation(audioBase64: string, mimeType: string, word: string): Promise<{score: number, feedback: string}> {
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: [
       {
@@ -341,7 +387,7 @@ export async function evaluatePronunciation(audioBase64: string, mimeType: strin
 export async function generateWrittenTest(words: Word[]): Promise<TestQuestion[]> {
   const wordList = words.map(w => w.word).join(", ");
   const halfCount = Math.ceil(words.length / 2);
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `請根據以下單字清單：[${wordList}]，產生一份測驗卷，包含 ${halfCount} 題單選題與 ${words.length - halfCount} 題填空題。
     請嚴格使用以下 JSON 格式回覆：
