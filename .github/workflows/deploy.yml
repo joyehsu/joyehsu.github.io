@@ -1,0 +1,35 @@
+name: 自動部署到 GitHub Pages
+
+# 設定觸發條件：當程式碼推送到 main 分支時執行
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 賦予機器人寫入權限
+
+    steps:
+      - name: 取得最新程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Node.js 環境
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # 使用最新的 Node.js 穩定版
+
+      - name: 安裝依賴套件 (npm install)
+        run: npm install
+
+      - name: 執行打包 (npm run build)
+        run: npm run build
+
+      - name: 部署到 gh-pages 分支
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist # 將這個資料夾的內容發布出去
