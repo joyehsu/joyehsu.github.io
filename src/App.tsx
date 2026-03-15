@@ -105,20 +105,20 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 font-sans flex flex-col">
       {/* Header / Progress Bar */}
-      <header className="bg-white shadow-sm px-8 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-4 md:gap-12">
+      <header className="bg-white shadow-sm px-4 py-3 md:px-8 md:py-4 flex justify-between items-center overflow-x-auto">
+        <div className="flex items-center gap-2 md:gap-12 min-w-max pr-4">
           {steps.map((step, index) => {
             const isActive = mode === step.id;
             const isPast = steps.findIndex(s => s.id === mode) > index;
             const Icon = step.icon;
             
             return (
-              <div key={step.id} className="flex items-center gap-3">
-                <div className={`flex items-center justify-center w-12 h-12 rounded-full transition-colors ${
+              <div key={step.id} className="flex items-center gap-2 md:gap-3">
+                <div className={`flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full transition-colors shrink-0 ${
                   isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 
                   isPast ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'
                 }`}>
-                  <Icon className="w-6 h-6" />
+                  <Icon className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
                 <span className={`hidden md:block font-bold text-lg ${
                   isActive ? 'text-indigo-900' : 
@@ -127,7 +127,7 @@ export default function App() {
                   {step.label}
                 </span>
                 {index < steps.length - 1 && (
-                  <div className={`hidden md:block w-12 h-1 rounded-full ml-4 ${
+                  <div className={`hidden md:block w-12 h-1 rounded-full ml-2 md:ml-4 ${
                     isPast ? 'bg-indigo-200' : 'bg-slate-200'
                   }`} />
                 )}
@@ -136,13 +136,13 @@ export default function App() {
           })}
         </div>
         
-        <div>
+        <div className="shrink-0 ml-2">
           {accessToken ? (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <span className="text-emerald-600 font-bold hidden sm:block">已連結 Google 日曆</span>
               <button 
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
               >
                 <LogOut className="w-5 h-5" />
                 <span className="hidden sm:block">登出</span>
@@ -151,10 +151,10 @@ export default function App() {
           ) : (
             <button 
               onClick={() => login()}
-              className="flex items-center gap-2 px-6 py-2 bg-indigo-50 text-indigo-600 font-bold rounded-full hover:bg-indigo-100 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 md:px-6 md:py-2 bg-indigo-50 text-indigo-600 font-bold rounded-full hover:bg-indigo-100 transition-colors"
             >
               <LogIn className="w-5 h-5" />
-              登入以儲存紀錄至日曆
+              <span className="hidden sm:inline">登入以儲存紀錄至日曆</span>
             </button>
           )}
         </div>
