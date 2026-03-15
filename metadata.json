@@ -1,5 +1,5 @@
 {
-  "name": "tutorxyz - AI單字家教",
+  "name": "AI單字家教",
   "description": "iPad-friendly English vocabulary tutor with voice teaching, speaking tests, and parent reports.",
   "requestFramePermissions": ["microphone", "camera"]
 }

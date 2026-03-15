@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BookOpen, Loader2, Camera, Upload, Image as ImageIcon, X, History } from 'lucide-react';
-import { Word } from '../types';
+import { BookOpen, Loader2, Camera, Upload, Image as ImageIcon, X, History, UserCircle2 } from 'lucide-react';
+import { Word, TeacherStyle } from '../types';
 import { generateVocabulary, extractWordsFromImage, extractWordsFromText } from '../services/gemini';
 import { saveCustomList } from '../services/history';
 import { HistoryTab } from './HistoryTab';
 
 interface Props {
-  onStart: (words: Word[], topic: string, level: string) => void;
+  onStart: (words: Word[], topic: string, level: string, teacherStyle: TeacherStyle) => void;
 }
 
 export function SetupScreen({ onStart }: Props) {
@@ -15,6 +15,7 @@ export function SetupScreen({ onStart }: Props) {
   const [level, setLevel] = useState('國一上學期');
   const [count, setCount] = useState(10);
   const [customText, setCustomText] = useState('');
+  const [teacherStyle, setTeacherStyle] = useState<TeacherStyle>('enthusiastic');
   const [isLoading, setIsLoading] = useState(false);
   
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -135,7 +136,7 @@ export function SetupScreen({ onStart }: Props) {
         finalLevel = '自訂單字表';
       }
 
-      onStart(words, finalTopic, finalLevel);
+      onStart(words, finalTopic, finalLevel, teacherStyle);
     } catch (error) {
       console.error(error);
       alert('產生單字失敗，請重試。');
@@ -203,7 +204,7 @@ export function SetupScreen({ onStart }: Props) {
 
         <div className="space-y-6">
           {inputMode === 'history' ? (
-            <HistoryTab onStartTest={onStart} />
+            <HistoryTab onStartTest={(words, topic, level) => onStart(words, topic, level, teacherStyle)} />
           ) : inputMode === 'topic' ? (
             <>
               <div>
@@ -323,20 +324,77 @@ export function SetupScreen({ onStart }: Props) {
           )}
 
           {inputMode !== 'history' && (
-            <div>
-              <label className="block text-lg font-medium text-slate-700 mb-2">
-                {inputMode === 'topic' ? '單字數量' : '最多擷取單字數'} ({count} 個)
-              </label>
-              <input 
-                type="range" 
-                min="3" 
-                max="20" 
-                value={count}
-                onChange={(e) => setCount(parseInt(e.target.value))}
-                className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-              />
+            <div className="space-y-6">
+              <div>
+                <label className="block text-lg font-medium text-slate-700 mb-2">
+                  {inputMode === 'topic' ? '單字數量' : '最多擷取單字數'} ({count} 個)
+                </label>
+                <input 
+                  type="range" 
+                  min="3" 
+                  max="20" 
+                  value={count}
+                  onChange={(e) => setCount(parseInt(e.target.value))}
+                  className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+              </div>
             </div>
           )}
+
+          <div>
+            <label className="block text-lg font-medium text-slate-700 mb-2">
+              <div className="flex items-center gap-2">
+                <UserCircle2 className="w-5 h-5 text-indigo-500" />
+                口語老師風格
+              </div>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => setTeacherStyle('enthusiastic')}
+                className={`p-3 rounded-xl border-2 text-left transition-all ${
+                  teacherStyle === 'enthusiastic' 
+                    ? 'border-indigo-500 bg-indigo-50 shadow-sm' 
+                    : 'border-slate-200 hover:border-indigo-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="font-bold text-slate-800">熱情鼓勵型</div>
+                <div className="text-xs text-slate-500 mt-1">高能量、充滿正能量，建立開口自信</div>
+              </button>
+              <button
+                onClick={() => setTeacherStyle('strict')}
+                className={`p-3 rounded-xl border-2 text-left transition-all ${
+                  teacherStyle === 'strict' 
+                    ? 'border-indigo-500 bg-indigo-50 shadow-sm' 
+                    : 'border-slate-200 hover:border-indigo-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="font-bold text-slate-800">嚴格精準型</div>
+                <div className="text-xs text-slate-500 mt-1">講求效率與準確度，立刻指正瑕疵</div>
+              </button>
+              <button
+                onClick={() => setTeacherStyle('socratic')}
+                className={`p-3 rounded-xl border-2 text-left transition-all ${
+                  teacherStyle === 'socratic' 
+                    ? 'border-indigo-500 bg-indigo-50 shadow-sm' 
+                    : 'border-slate-200 hover:border-indigo-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="font-bold text-slate-800">蘇格拉底引導型</div>
+                <div className="text-xs text-slate-500 mt-1">不直接給答案，用反問引導思考</div>
+              </button>
+              <button
+                onClick={() => setTeacherStyle('humorous')}
+                className={`p-3 rounded-xl border-2 text-left transition-all ${
+                  teacherStyle === 'humorous' 
+                    ? 'border-indigo-500 bg-indigo-50 shadow-sm' 
+                    : 'border-slate-200 hover:border-indigo-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="font-bold text-slate-800">幽默搞笑型</div>
+                <div className="text-xs text-slate-500 mt-1">講話風趣，用搞笑例句幫助記憶</div>
+              </button>
+            </div>
+          </div>
         </div>
 
         {inputMode !== 'history' && (

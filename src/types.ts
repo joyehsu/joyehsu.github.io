@@ -32,6 +32,8 @@ export interface TestResult {
 
 export type AppMode = 'setup' | 'learning' | 'speaking' | 'written' | 'report';
 
+export type TeacherStyle = 'enthusiastic' | 'strict' | 'socratic' | 'humorous';
+
 export interface CustomList {
   id: string;
   title: string;

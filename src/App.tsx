@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { AppMode, Word, TestResult } from './types';
+import { AppMode, Word, TestResult, TeacherStyle } from './types';
 import { SetupScreen } from './components/SetupScreen';
 import { LearningScreen } from './components/LearningScreen';
 import { SpeakingScreen } from './components/SpeakingScreen';
 import { WrittenScreen } from './components/WrittenScreen';
 import { ReportScreen } from './components/ReportScreen';
-import { ApiKeySetupScreen } from './components/ApiKeySetupScreen';
+import { ApiKeySetupScreen, AppConfig } from './components/ApiKeySetupScreen';
 import { LoginScreen } from './components/LoginScreen';
 import { BookOpen, Mic, PenTool, BarChart, LogIn, LogOut, Loader2, Settings } from 'lucide-react';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { getOrCreateCalendar, addTestResultToCalendar } from './services/calendar';
-import { getApiKeyFromDrive, saveApiKeyToDrive } from './services/drive';
+import { getConfigFromDrive, saveConfigToDrive } from './services/drive';
 import { setGeminiApiKey } from './services/gemini';
 
 export default function App() {
@@ -19,20 +19,21 @@ export default function App() {
   const [speakingResults, setSpeakingResults] = useState<Partial<TestResult>[]>([]);
   const [writtenResults, setWrittenResults] = useState<Partial<TestResult>[]>([]);
   const [sessionInfo, setSessionInfo] = useState<{topic: string, level: string} | null>(null);
+  const [teacherStyle, setTeacherStyle] = useState<TeacherStyle>('enthusiastic');
   
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isSavingToCalendar, setIsSavingToCalendar] = useState(false);
   
   const [isCheckingKey, setIsCheckingKey] = useState(false);
   const [showApiKeySetup, setShowApiKeySetup] = useState(false);
-  const [geminiApiKey, setGeminiApiKeyState] = useState<string | null>(null);
+  const [appConfig, setAppConfig] = useState<AppConfig | null>(null);
 
   const checkApiKey = async (token: string) => {
     setIsCheckingKey(true);
-    const key = await getApiKeyFromDrive(token);
-    if (key) {
-      setGeminiApiKey(key);
-      setGeminiApiKeyState(key);
+    const config = await getConfigFromDrive(token);
+    if (config && config.geminiApiKey) {
+      setGeminiApiKey(config.geminiApiKey);
+      setAppConfig(config);
       setShowApiKeySetup(false);
     } else {
       setShowApiKeySetup(true);
@@ -54,26 +55,27 @@ export default function App() {
   const handleLogout = () => {
     googleLogout();
     setAccessToken(null);
-    setGeminiApiKeyState(null);
+    setAppConfig(null);
     setShowApiKeySetup(false);
     handleRestart();
   };
 
-  const handleSaveApiKey = async (key: string) => {
+  const handleSaveConfig = async (config: AppConfig) => {
     if (!accessToken) return;
-    const success = await saveApiKeyToDrive(accessToken, key);
+    const success = await saveConfigToDrive(accessToken, config);
     if (success) {
-      setGeminiApiKey(key);
-      setGeminiApiKeyState(key);
+      setGeminiApiKey(config.geminiApiKey);
+      setAppConfig(config);
       setShowApiKeySetup(false);
     } else {
-      alert("儲存 API Key 失敗，請重試。");
+      alert("儲存設定失敗，請重試。");
     }
   };
 
-  const handleStart = (generatedWords: Word[], topic: string, level: string) => {
+  const handleStart = (generatedWords: Word[], topic: string, level: string, style: TeacherStyle) => {
     setWords(generatedWords);
     setSessionInfo({ topic, level });
+    setTeacherStyle(style);
     setMode('learning');
   };
 
@@ -91,7 +93,7 @@ export default function App() {
     setMode('report');
     
     // Save session to Google Calendar if logged in
-    if (accessToken && sessionInfo) {
+    if (accessToken && sessionInfo && appConfig) {
       setIsSavingToCalendar(true);
       try {
         const totalWords = words.length;
@@ -109,8 +111,8 @@ export default function App() {
           .filter(r => !r.writtenCorrect)
           .map(r => r.word);
 
-        const calendarId = await getOrCreateCalendar(accessToken);
-        await addTestResultToCalendar(accessToken, calendarId, sessionInfo.topic, finalScore, mistakes);
+        const calendarId = await getOrCreateCalendar(accessToken, appConfig.calendarName);
+        await addTestResultToCalendar(accessToken, calendarId, sessionInfo.topic, finalScore, mistakes, words.length);
         
         alert('測驗成績已成功儲存至您的 Google 日曆！');
       } catch (error) {
@@ -157,9 +159,9 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-100">
         <ApiKeySetupScreen 
-          onSave={handleSaveApiKey} 
-          initialKey={geminiApiKey || ''}
-          onCancel={geminiApiKey ? () => setShowApiKeySetup(false) : undefined}
+          onSave={handleSaveConfig} 
+          initialConfig={appConfig || undefined}
+          onCancel={appConfig ? () => setShowApiKeySetup(false) : undefined}
         />
       </div>
     );
@@ -204,7 +206,7 @@ export default function App() {
             <button
               onClick={() => setShowApiKeySetup(true)}
               className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-              title="設定 API Key"
+              title="設定"
             >
               <Settings className="w-5 h-5" />
               <span className="hidden sm:block">設定</span>
@@ -231,9 +233,9 @@ export default function App() {
           </div>
         )}
         {mode === 'setup' && <SetupScreen onStart={handleStart} />}
-        {mode === 'learning' && <LearningScreen words={words} onComplete={handleLearningComplete} />}
-        {mode === 'speaking' && <SpeakingScreen words={words} onComplete={handleSpeakingComplete} />}
-        {mode === 'written' && <WrittenScreen words={words} onComplete={handleWrittenComplete} />}
+        {mode === 'learning' && <LearningScreen words={words} onComplete={handleLearningComplete} onRestart={handleRestart} />}
+        {mode === 'speaking' && <SpeakingScreen words={words} onComplete={handleSpeakingComplete} onRestart={handleRestart} teacherStyle={teacherStyle} />}
+        {mode === 'written' && <WrittenScreen words={words} onComplete={handleWrittenComplete} onRestart={handleRestart} />}
         {mode === 'report' && (
           <ReportScreen 
             words={words} 

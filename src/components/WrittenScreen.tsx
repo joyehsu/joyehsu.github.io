@@ -7,9 +7,10 @@ import { generateWrittenTest } from '../services/gemini';
 interface Props {
   words: Word[];
   onComplete: (results: Partial<TestResult>[]) => void;
+  onRestart: () => void;
 }
 
-export function WrittenScreen({ words, onComplete }: Props) {
+export function WrittenScreen({ words, onComplete, onRestart }: Props) {
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,8 +109,16 @@ export function WrittenScreen({ words, onComplete }: Props) {
     <div className="flex flex-col h-full max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-bold text-slate-700">筆試測驗</h2>
-        <div className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-bold text-lg">
-          {currentIndex + 1} / {questions.length}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onRestart}
+            className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 rounded-full transition-colors"
+          >
+            取消測驗
+          </button>
+          <div className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-bold text-lg">
+            {currentIndex + 1} / {questions.length}
+          </div>
         </div>
       </div>
 

@@ -7,9 +7,10 @@ import { generateAudio, generateTeacherScript } from '../services/gemini';
 interface Props {
   words: Word[];
   onComplete: () => void;
+  onRestart: () => void;
 }
 
-export function LearningScreen({ words, onComplete }: Props) {
+export function LearningScreen({ words, onComplete, onRestart }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
@@ -165,8 +166,25 @@ export function LearningScreen({ words, onComplete }: Props) {
     <div className="flex flex-col h-full max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-bold text-slate-700">單字學習</h2>
-        <div className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full font-bold text-lg">
-          {currentIndex + 1} / {words.length}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onRestart}
+            className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 rounded-full transition-colors"
+          >
+            取消學習
+          </button>
+          <button
+            onClick={() => {
+              stopCurrentAudio();
+              onComplete();
+            }}
+            className="px-4 py-2 text-sm font-bold text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 bg-indigo-50 rounded-full transition-colors"
+          >
+            略過學習
+          </button>
+          <div className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full font-bold text-lg">
+            {currentIndex + 1} / {words.length}
+          </div>
         </div>
       </div>
 

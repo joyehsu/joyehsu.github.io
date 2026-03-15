@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Mic, Loader2, CheckCircle2, Volume2 } from 'lucide-react';
-import { Word, TestResult } from '../types';
+import { Word, TestResult, TeacherStyle } from '../types';
 import { startLiveSpeakingSession } from '../services/gemini';
 
 interface Props {
   words: Word[];
   onComplete: (results: Partial<TestResult>[]) => void;
+  onRestart: () => void;
+  teacherStyle: TeacherStyle;
 }
 
-export function SpeakingScreen({ words, onComplete }: Props) {
+export function SpeakingScreen({ words, onComplete, onRestart, teacherStyle }: Props) {
   const [isConnecting, setIsConnecting] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -66,6 +68,7 @@ export function SpeakingScreen({ words, onComplete }: Props) {
 
         const sessionPromise = startLiveSpeakingSession(
           words,
+          teacherStyle,
           (base64Audio) => {
             if (!isActive) return;
             playAudioChunk(base64Audio);
@@ -210,9 +213,17 @@ export function SpeakingScreen({ words, onComplete }: Props) {
     <div className="flex flex-col h-full max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-bold text-slate-700">即時語音口說測驗</h2>
-        <div className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-          Live
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onRestart}
+            className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 rounded-full transition-colors"
+          >
+            取消測驗
+          </button>
+          <div className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            Live
+          </div>
         </div>
       </div>
 

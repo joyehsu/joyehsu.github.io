@@ -88,7 +88,7 @@ export function ReportScreen({ words, speakingResults, writtenResults, onRestart
         </table>
       </div>
 
-      <div className="flex justify-center pb-10">
+      <div className="flex flex-col items-center gap-4 pb-10">
         <button 
           onClick={onRestart}
           className="px-10 py-5 bg-slate-900 text-white text-2xl font-bold rounded-full hover:bg-slate-800 transition-colors flex items-center gap-3 shadow-xl"
@@ -96,6 +96,14 @@ export function ReportScreen({ words, speakingResults, writtenResults, onRestart
           <RotateCcw className="w-8 h-8" />
           開始新課程
         </button>
+        <a 
+          href="https://calendar.google.com/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-indigo-600 hover:text-indigo-800 underline font-medium"
+        >
+          前往 Google 日曆查看學習紀錄
+        </a>
       </div>
     </div>
   );

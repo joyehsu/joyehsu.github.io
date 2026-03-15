@@ -1,9 +1,18 @@
-const CONFIG_FILE_NAME = 'tutorxyz_config.json';
+import { AppConfig } from '../components/ApiKeySetupScreen';
 
-export async function getApiKeyFromDrive(accessToken: string): Promise<string | null> {
+export function getConfigFileName(): string {
+  return localStorage.getItem('tutorxyz_config_filename') || 'tutorxyz_config.json';
+}
+
+export function setConfigFileName(name: string) {
+  localStorage.setItem('tutorxyz_config_filename', name);
+}
+
+export async function getConfigFromDrive(accessToken: string): Promise<AppConfig | null> {
   try {
+    const fileName = getConfigFileName();
     // 1. Find the file in appDataFolder
-    const searchResponse = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${CONFIG_FILE_NAME}'`, {
+    const searchResponse = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${fileName}'`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -27,17 +36,24 @@ export async function getApiKeyFromDrive(accessToken: string): Promise<string | 
     
     if (!fileResponse.ok) return null;
     const config = await fileResponse.json();
-    return config.geminiApiKey || null;
+    return {
+      geminiApiKey: config.geminiApiKey || '',
+      calendarName: config.calendarName || '📖 AI單字家教紀錄',
+      configFileName: fileName
+    };
   } catch (e) {
     console.error("Error reading from Drive", e);
     return null;
   }
 }
 
-export async function saveApiKeyToDrive(accessToken: string, apiKey: string): Promise<boolean> {
+export async function saveConfigToDrive(accessToken: string, config: AppConfig): Promise<boolean> {
   try {
+    const fileName = config.configFileName;
+    setConfigFileName(fileName);
+
     // 1. Check if file exists
-    const searchResponse = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${CONFIG_FILE_NAME}'`, {
+    const searchResponse = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${fileName}'`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -47,11 +63,14 @@ export async function saveApiKeyToDrive(accessToken: string, apiKey: string): Pr
     const fileExists = searchData.files && searchData.files.length > 0;
     
     const metadata = {
-      name: CONFIG_FILE_NAME,
+      name: fileName,
       parents: ['appDataFolder']
     };
     
-    const fileContent = JSON.stringify({ geminiApiKey: apiKey });
+    const fileContent = JSON.stringify({ 
+      geminiApiKey: config.geminiApiKey,
+      calendarName: config.calendarName
+    });
     const file = new Blob([fileContent], { type: 'application/json' });
     
     const form = new FormData();
