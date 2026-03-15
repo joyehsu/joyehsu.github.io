@@ -187,6 +187,16 @@ export async function fillWordDetails(words: string[]): Promise<Word[]> {
   }));
 }
 
+export function getVoiceConfig(style: TeacherStyle) {
+  switch (style) {
+    case 'enthusiastic': return { voiceName: 'Kore', lang: 'en-US', pitch: 1.2, rate: 1.1 };
+    case 'strict': return { voiceName: 'Fenrir', lang: 'en-GB', pitch: 0.8, rate: 0.95 };
+    case 'socratic': return { voiceName: 'Charon', lang: 'en-US', pitch: 1.0, rate: 0.85 };
+    case 'humorous': return { voiceName: 'Puck', lang: 'en-US', pitch: 1.1, rate: 1.05 };
+    default: return { voiceName: 'Kore', lang: 'en-US', pitch: 1.0, rate: 1.0 };
+  }
+}
+
 export async function generateTeacherScript(word: string, meaning: string): Promise<string> {
   const response = await getAI().models.generateContent({
     model: "gemini-3-flash-preview",
@@ -195,13 +205,15 @@ export async function generateTeacherScript(word: string, meaning: string): Prom
   return response.text || "";
 }
 
-export async function generateAudio(text: string): Promise<string | undefined> {
+export async function generateAudio(text: string, teacherStyle: TeacherStyle = 'enthusiastic'): Promise<string | undefined> {
   if (!text || text.trim() === '') return undefined;
   
   // Strip markdown characters that might confuse the TTS model
   const cleanText = text.replace(/[*_#`]/g, '').trim();
   
   if (!cleanText) return undefined;
+
+  const voiceConfig = getVoiceConfig(teacherStyle);
 
   try {
     const response = await getAI().models.generateContent({
@@ -211,7 +223,7 @@ export async function generateAudio(text: string): Promise<string | undefined> {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Puck' },
+            prebuiltVoiceConfig: { voiceName: voiceConfig.voiceName },
           },
         },
       },
@@ -265,26 +277,22 @@ export async function startLiveSpeakingSession(
     case 'enthusiastic':
       stylePrompt = `【你的風格：熱情鼓勵型 (The Enthusiastic Motivator)】
 特色： 高能量、語氣誇張、充滿正能量。無論學生答對或答錯，都會給予極大的情緒價值，主要目的是「建立開口說英文的自信」。
-適合對象： 國小/國中低年級生、害怕開口犯錯的初學者。
-AI 提示詞重點： 「你是一位極度熱情、隨時都在誇獎學生的啦啦隊老師。請多使用『太棒了』、『沒關係，你已經做得很好了』等字眼。如果學生答錯，用極度溫柔且鼓勵的語氣給予提示。」`;
+AI 提示詞重點： 「你是一位極度熱情、隨時都在誇獎學生的啦啦隊老師。請多使用『太棒了』等字眼。學生答錯時，用極度溫柔且鼓勵的語氣給予提示。」`;
       break;
     case 'strict':
       stylePrompt = `【你的風格：嚴格精準型 (The Strict Academic)】
 特色： 講求效率與準確度。不講廢話，會立刻點出發音的瑕疵或拼字的錯誤，要求學生反覆練習直到完美。
-適合對象： 準備大考（會考、學測）的學生、希望追求發音完美的進階學習者。
-AI 提示詞重點： 「你是一位嚴格、專業的考官。不需要過多的稱讚，請直接指出學生的錯誤（例如：『你的 th 發音不夠標準，舌頭要伸出來』、『拼字漏了一個 s』）。如果學生答錯，請直接要求他重唸或重拼，直到完全正確為止。」`;
+AI 提示詞重點： 「你是一位嚴謹、高標準的專業學術導師。語氣平穩、專業、不苟言笑。當學生發音有微小瑕疵時，必須立刻指正。以效率與正確性為最高原則。」`;
       break;
     case 'socratic':
       stylePrompt = `【你的風格：引導啟發型 (The Socratic Guide)】
 特色： 絕對不直接給答案。善用提問、字根字首、或是生活中的聯想來引導學生自己想出答案。
-適合對象： 喜歡思考、需要加深單字記憶連結的學生。
-AI 提示詞重點： 「你是一位蘇格拉底式的導師。當學生不會唸或拼錯時，絕對不要直接告訴他正確答案。請用引導的方式，例如：『這個字的字首和蘋果一樣喔，你覺得是什麼？』或是『你想想看，圖書館的英文前面聽起來像什麼？』讓學生自己拼湊出來。」`;
+AI 提示詞重點： 「你是一位擅長啟發思考的智者老師。當學生不會拼字或發音時，絕對禁止直接給答案。必須給予線索引導他自己拼出來。」`;
       break;
     case 'humorous':
-      stylePrompt = `【你的風格：幽默搞笑型 (The Comedian / Fun Friend)】
+      stylePrompt = `【你的風格：幽默搞笑型 (The Comedian)】
 特色： 語氣輕鬆、像朋友一樣，會用好笑的諧音梗或誇張的情境來解釋單字，讓學習過程充滿樂趣。
-適合對象： 注意力容易分散、覺得背單字很無聊的學生。
-AI 提示詞重點： 「你是一位幽默風趣、喜歡開玩笑的英文老師。請用輕鬆、像朋友聊天的語氣。如果學生答錯，可以用開玩笑的方式糾正（例如：『哎呀，你把沙漠 (desert) 拼成甜點 (dessert) 了，你是肚子餓了嗎？』）。多用生動、搞笑的例子來幫助記憶。」`;
+AI 提示詞重點： 「你是一位幽默、愛開玩笑的朋友型家教。用語氣輕鬆、時下流行的口吻說話。如果學生答錯，用輕鬆幽默的方式化解尷尬並給予提示。」`;
       break;
   }
 
@@ -361,7 +369,7 @@ ${stylePrompt}
     config: {
       responseModalities: [Modality.AUDIO],
       speechConfig: {
-        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
+        voiceConfig: { prebuiltVoiceConfig: { voiceName: getVoiceConfig(teacherStyle).voiceName } },
       },
       systemInstruction,
       tools: [{

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Key, ExternalLink, Loader2, CheckCircle2, AlertTriangle, Calendar, FileJson } from 'lucide-react';
+import { Key, ExternalLink, Loader2, CheckCircle2, AlertTriangle, Calendar, FileJson, Mic2 } from 'lucide-react';
+import { TeacherStyle } from '../types';
 
 export interface AppConfig {
   geminiApiKey: string;
   calendarName: string;
   configFileName: string;
+  teacherStyle: TeacherStyle;
 }
 
 interface Props {
@@ -17,6 +19,7 @@ export function ApiKeySetupScreen({ onSave, onCancel, initialConfig }: Props) {
   const [apiKey, setApiKey] = useState(initialConfig?.geminiApiKey || '');
   const [calendarName, setCalendarName] = useState(initialConfig?.calendarName || '📖 AI單字家教紀錄');
   const [configFileName, setConfigFileName] = useState(initialConfig?.configFileName || 'tutorxyz_config.json');
+  const [teacherStyle, setTeacherStyle] = useState<TeacherStyle>(initialConfig?.teacherStyle || 'enthusiastic');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
@@ -25,7 +28,8 @@ export function ApiKeySetupScreen({ onSave, onCancel, initialConfig }: Props) {
     await onSave({
       geminiApiKey: apiKey.trim(),
       calendarName: calendarName.trim(),
-      configFileName: configFileName.trim()
+      configFileName: configFileName.trim(),
+      teacherStyle
     });
     setIsSaving(false);
   };
@@ -109,6 +113,39 @@ export function ApiKeySetupScreen({ onSave, onCancel, initialConfig }: Props) {
               placeholder="例如：tutorxyz_config.json"
               className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all outline-none font-mono"
             />
+          </div>
+        </div>
+
+        <div className="space-y-4 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+          <h3 className="font-bold text-slate-700 flex items-center gap-2">
+            <Mic2 className="w-5 h-5 text-indigo-600" />
+            口語老師風格與音色
+          </h3>
+          <div className="pl-7 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              { id: 'enthusiastic', label: '熱情鼓勵型', desc: 'Kore (明亮活力)', icon: '🌟' },
+              { id: 'strict', label: '嚴格精準型', desc: 'Fenrir (低沉穩重)', icon: '🧐' },
+              { id: 'socratic', label: '引導啟發型', desc: 'Charon (溫和智者)', icon: '🤔' },
+              { id: 'humorous', label: '幽默搞笑型', desc: 'Puck (輕鬆活潑)', icon: '😂' }
+            ].map((style) => (
+              <button
+                key={style.id}
+                onClick={() => setTeacherStyle(style.id as TeacherStyle)}
+                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                  teacherStyle === style.id
+                    ? 'border-indigo-600 bg-indigo-50/50 shadow-sm'
+                    : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">{style.icon}</span>
+                  <span className={`font-bold ${teacherStyle === style.id ? 'text-indigo-700' : 'text-slate-700'}`}>
+                    {style.label}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-500">{style.desc}</p>
+              </button>
+            ))}
           </div>
         </div>
 

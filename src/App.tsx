@@ -19,7 +19,6 @@ export default function App() {
   const [speakingResults, setSpeakingResults] = useState<Partial<TestResult>[]>([]);
   const [writtenResults, setWrittenResults] = useState<Partial<TestResult>[]>([]);
   const [sessionInfo, setSessionInfo] = useState<{topic: string, level: string} | null>(null);
-  const [teacherStyle, setTeacherStyle] = useState<TeacherStyle>('enthusiastic');
   
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isSavingToCalendar, setIsSavingToCalendar] = useState(false);
@@ -72,10 +71,9 @@ export default function App() {
     }
   };
 
-  const handleStart = (generatedWords: Word[], topic: string, level: string, style: TeacherStyle) => {
+  const handleStart = (generatedWords: Word[], topic: string, level: string) => {
     setWords(generatedWords);
     setSessionInfo({ topic, level });
-    setTeacherStyle(style);
     setMode('learning');
   };
 
@@ -233,8 +231,8 @@ export default function App() {
           </div>
         )}
         {mode === 'setup' && <SetupScreen onStart={handleStart} />}
-        {mode === 'learning' && <LearningScreen words={words} onComplete={handleLearningComplete} onRestart={handleRestart} />}
-        {mode === 'speaking' && <SpeakingScreen words={words} onComplete={handleSpeakingComplete} onRestart={handleRestart} teacherStyle={teacherStyle} />}
+        {mode === 'learning' && <LearningScreen words={words} onComplete={handleLearningComplete} onRestart={handleRestart} teacherStyle={appConfig?.teacherStyle || 'enthusiastic'} />}
+        {mode === 'speaking' && <SpeakingScreen words={words} onComplete={handleSpeakingComplete} onRestart={handleRestart} teacherStyle={appConfig?.teacherStyle || 'enthusiastic'} />}
         {mode === 'written' && <WrittenScreen words={words} onComplete={handleWrittenComplete} onRestart={handleRestart} />}
         {mode === 'report' && (
           <ReportScreen 

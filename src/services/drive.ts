@@ -39,7 +39,8 @@ export async function getConfigFromDrive(accessToken: string): Promise<AppConfig
     return {
       geminiApiKey: config.geminiApiKey || '',
       calendarName: config.calendarName || '📖 AI單字家教紀錄',
-      configFileName: fileName
+      configFileName: fileName,
+      teacherStyle: config.teacherStyle || 'enthusiastic'
     };
   } catch (e) {
     console.error("Error reading from Drive", e);
