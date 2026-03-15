@@ -17,7 +17,7 @@ interface Props {
 
 export function ApiKeySetupScreen({ onSave, onCancel, initialConfig }: Props) {
   const [apiKey, setApiKey] = useState(initialConfig?.geminiApiKey || '');
-  const [calendarName, setCalendarName] = useState(initialConfig?.calendarName || '📖 AI單字家教紀錄');
+  const [calendarName, setCalendarName] = useState(initialConfig?.calendarName || 'tutorxyz學習紀錄');
   const [configFileName, setConfigFileName] = useState(initialConfig?.configFileName || 'tutorxyz_config.json');
   const [teacherStyle, setTeacherStyle] = useState<TeacherStyle>(initialConfig?.teacherStyle || 'enthusiastic');
   const [isSaving, setIsSaving] = useState(false);
@@ -93,7 +93,7 @@ export function ApiKeySetupScreen({ onSave, onCancel, initialConfig }: Props) {
               type="text"
               value={calendarName}
               onChange={(e) => setCalendarName(e.target.value)}
-              placeholder="例如：📖 AI單字家教紀錄"
+              placeholder="例如：tutorxyz學習紀錄"
               className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all outline-none"
             />
           </div>

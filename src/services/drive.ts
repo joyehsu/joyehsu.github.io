@@ -38,7 +38,7 @@ export async function getConfigFromDrive(accessToken: string): Promise<AppConfig
     const config = await fileResponse.json();
     return {
       geminiApiKey: config.geminiApiKey || '',
-      calendarName: config.calendarName || '📖 AI單字家教紀錄',
+      calendarName: config.calendarName || 'tutorxyz學習紀錄',
       configFileName: fileName,
       teacherStyle: config.teacherStyle || 'enthusiastic'
     };
