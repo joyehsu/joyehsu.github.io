@@ -107,7 +107,7 @@ export function HistoryTab({ onStartTest }: Props) {
     return (
       <div className="text-center py-12 text-slate-500">
         <p>目前沒有歷史紀錄。</p>
-        <p className="text-sm mt-2">使用「拍照 / 上傳」或「手動輸入」產生的單字表會顯示在這裡。</p>
+        <p className="text-sm mt-2">使用「主題產生」、「拍照 / 上傳」或「手動輸入」產生的單字表會顯示在這裡。</p>
       </div>
     );
   }

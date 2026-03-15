@@ -11,9 +11,9 @@ interface Props {
 
 export function SetupScreen({ onStart }: Props) {
   const [inputMode, setInputMode] = useState<'topic' | 'image' | 'text' | 'history'>('topic');
-  const [topic, setTopic] = useState('學校生活與文具');
-  const [level, setLevel] = useState('國一上學期');
-  const [count, setCount] = useState(10);
+  const [topic, setTopic] = useState(() => localStorage.getItem('last_topic') || '學校生活與文具');
+  const [level, setLevel] = useState(() => localStorage.getItem('last_level') || '國一上學期');
+  const [count, setCount] = useState(() => parseInt(localStorage.getItem('last_count') || '10', 10));
   const [customText, setCustomText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -107,7 +107,14 @@ export function SetupScreen({ onStart }: Props) {
       let finalLevel = level;
 
       if (inputMode === 'topic') {
+        localStorage.setItem('last_topic', topic);
+        localStorage.setItem('last_level', level);
+        localStorage.setItem('last_count', count.toString());
+        
         words = await generateVocabulary(topic, level, count);
+        const savedList = saveCustomList('topic', words, `[${level}] ${topic}`);
+        finalTopic = savedList.title;
+        finalLevel = '歷史紀錄';
       } else if (inputMode === 'image' && selectedImage && imagePreview) {
         const base64Data = imagePreview.split(',')[1];
         words = await extractWordsFromImage(base64Data, selectedImage.type, count);

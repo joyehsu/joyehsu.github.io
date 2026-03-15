@@ -37,7 +37,7 @@ export type TeacherStyle = 'enthusiastic' | 'strict' | 'socratic' | 'humorous';
 export interface CustomList {
   id: string;
   title: string;
-  source: 'image' | 'text';
+  source: 'topic' | 'image' | 'text';
   words: Word[];
   createdAt: number;
 }
