@@ -1,8 +1,18 @@
 import { GoogleGenAI, Type, Modality, LiveServerMessage } from "@google/genai";
 import { Word, TestQuestion, MultipleChoiceQuestion, FillInTheBlankQuestion } from "../types";
 
+let userApiKey: string | null = null;
+
+export function setGeminiApiKey(key: string) {
+  userApiKey = key;
+}
+
 function getAI() {
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const key = userApiKey || process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error("Gemini API Key is missing. Please set it up first.");
+  }
+  return new GoogleGenAI({ apiKey: key });
 }
 
 export async function generateVocabulary(topic: string, level: string, count: number): Promise<Word[]> {
@@ -276,7 +286,7 @@ export async function startLiveSpeakingSession(
 【對話開場】 請主動熱情地打招呼，介紹自己，並直接開始測驗第一個單字（記得只說中文解釋）。`;
 
   const sessionPromise = getAI().live.connect({
-    model: "gemini-2.5-flash-native-audio-preview-12-2025",
+    model: "gemini-2.5-flash-native-audio-preview-09-2025",
     callbacks: {
       onopen: () => {
         console.log("Live session opened");

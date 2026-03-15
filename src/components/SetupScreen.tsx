@@ -151,8 +151,9 @@ export function SetupScreen({ onStart }: Props) {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-100 rounded-full mb-4">
             <BookOpen className="w-10 h-10 text-indigo-600" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-800">AI 單字家教</h1>
-          <p className="text-slate-500 text-lg">為孩子量身打造的專屬單字課</p>
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-800 tracking-tight">tutorxyz</h1>
+          <h2 className="text-xl sm:text-2xl font-bold text-indigo-600">AI單字家教</h2>
+          <p className="text-slate-500 text-base sm:text-lg pt-1">為孩子量身打造的專屬單字課</p>
         </div>
 
         {/* Input Mode Tabs */}

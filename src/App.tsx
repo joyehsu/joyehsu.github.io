@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppMode, Word, TestResult } from './types';
 import { SetupScreen } from './components/SetupScreen';
 import { LearningScreen } from './components/LearningScreen';
 import { SpeakingScreen } from './components/SpeakingScreen';
 import { WrittenScreen } from './components/WrittenScreen';
 import { ReportScreen } from './components/ReportScreen';
-import { BookOpen, Mic, PenTool, BarChart, LogIn, LogOut, Loader2 } from 'lucide-react';
+import { ApiKeySetupScreen } from './components/ApiKeySetupScreen';
+import { LoginScreen } from './components/LoginScreen';
+import { BookOpen, Mic, PenTool, BarChart, LogIn, LogOut, Loader2, Settings } from 'lucide-react';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { getOrCreateCalendar, addTestResultToCalendar } from './services/calendar';
+import { getApiKeyFromDrive, saveApiKeyToDrive } from './services/drive';
+import { setGeminiApiKey } from './services/gemini';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('setup');
@@ -18,12 +22,30 @@ export default function App() {
   
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isSavingToCalendar, setIsSavingToCalendar] = useState(false);
+  
+  const [isCheckingKey, setIsCheckingKey] = useState(false);
+  const [showApiKeySetup, setShowApiKeySetup] = useState(false);
+  const [geminiApiKey, setGeminiApiKeyState] = useState<string | null>(null);
+
+  const checkApiKey = async (token: string) => {
+    setIsCheckingKey(true);
+    const key = await getApiKeyFromDrive(token);
+    if (key) {
+      setGeminiApiKey(key);
+      setGeminiApiKeyState(key);
+      setShowApiKeySetup(false);
+    } else {
+      setShowApiKeySetup(true);
+    }
+    setIsCheckingKey(false);
+  };
 
   const login = useGoogleLogin({
     onSuccess: (tokenResponse) => {
       setAccessToken(tokenResponse.access_token);
+      checkApiKey(tokenResponse.access_token);
     },
-    scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar',
+    scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/drive.appdata',
     onError: () => {
       alert("登入失敗，請重試。");
     }
@@ -32,7 +54,21 @@ export default function App() {
   const handleLogout = () => {
     googleLogout();
     setAccessToken(null);
+    setGeminiApiKeyState(null);
+    setShowApiKeySetup(false);
     handleRestart();
+  };
+
+  const handleSaveApiKey = async (key: string) => {
+    if (!accessToken) return;
+    const success = await saveApiKeyToDrive(accessToken, key);
+    if (success) {
+      setGeminiApiKey(key);
+      setGeminiApiKeyState(key);
+      setShowApiKeySetup(false);
+    } else {
+      alert("儲存 API Key 失敗，請重試。");
+    }
   };
 
   const handleStart = (generatedWords: Word[], topic: string, level: string) => {
@@ -102,6 +138,33 @@ export default function App() {
     { id: 'report', icon: BarChart, label: '報告' },
   ];
 
+  if (!accessToken) {
+    return <LoginScreen onLogin={() => login()} />;
+  }
+
+  if (isCheckingKey) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+          <p className="text-lg font-bold text-slate-700">正在檢查系統設定...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showApiKeySetup) {
+    return (
+      <div className="min-h-screen bg-slate-100">
+        <ApiKeySetupScreen 
+          onSave={handleSaveApiKey} 
+          initialKey={geminiApiKey || ''}
+          onCancel={geminiApiKey ? () => setShowApiKeySetup(false) : undefined}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 font-sans flex flex-col">
       {/* Header / Progress Bar */}
@@ -137,26 +200,23 @@ export default function App() {
         </div>
         
         <div className="shrink-0 ml-2">
-          {accessToken ? (
-            <div className="flex items-center gap-2 md:gap-4">
-              <span className="text-emerald-600 font-bold hidden sm:block">已連結 Google 日曆</span>
-              <button 
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="hidden sm:block">登出</span>
-              </button>
-            </div>
-          ) : (
-            <button 
-              onClick={() => login()}
-              className="flex items-center gap-2 px-3 py-2 md:px-6 md:py-2 bg-indigo-50 text-indigo-600 font-bold rounded-full hover:bg-indigo-100 transition-colors"
+          <div className="flex items-center gap-2 md:gap-4">
+            <button
+              onClick={() => setShowApiKeySetup(true)}
+              className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+              title="設定 API Key"
             >
-              <LogIn className="w-5 h-5" />
-              <span className="hidden sm:inline">登入以儲存紀錄至日曆</span>
+              <Settings className="w-5 h-5" />
+              <span className="hidden sm:block">設定</span>
             </button>
-          )}
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="hidden sm:block">登出</span>
+            </button>
+          </div>
         </div>
       </header>
 
