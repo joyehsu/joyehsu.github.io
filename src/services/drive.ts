@@ -63,43 +63,54 @@ export async function saveConfigToDrive(accessToken: string, config: AppConfig):
     const searchData = await searchResponse.json();
     const fileExists = searchData.files && searchData.files.length > 0;
     
-    const metadata = {
-      name: fileName,
-      parents: ['appDataFolder']
-    };
-    
     const fileContent = JSON.stringify({ 
       geminiApiKey: config.geminiApiKey,
-      calendarName: config.calendarName
+      calendarName: config.calendarName,
+      teacherStyle: config.teacherStyle
     });
-    const file = new Blob([fileContent], { type: 'application/json' });
     
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', file);
-    
+    let fileId = '';
+
     if (fileExists) {
-      // Update existing file
-      const fileId = searchData.files[0].id;
-      const updateResponse = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: form
-      });
-      return updateResponse.ok;
+      fileId = searchData.files[0].id;
     } else {
-      // Create new file
-      const createResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      // Create new file metadata
+      const createMetaResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
         },
-        body: form
+        body: JSON.stringify({
+          name: fileName,
+          parents: ['appDataFolder']
+        })
       });
-      return createResponse.ok;
+      
+      if (!createMetaResponse.ok) {
+        console.error("Failed to create file metadata", await createMetaResponse.text());
+        return false;
+      }
+      const metaData = await createMetaResponse.json();
+      fileId = metaData.id;
     }
+
+    // Upload content to the file
+    const uploadResponse = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: fileContent
+    });
+    
+    if (!uploadResponse.ok) {
+      console.error("Failed to upload file content", await uploadResponse.text());
+      return false;
+    }
+    
+    return true;
   } catch (e) {
     console.error("Error saving to Drive", e);
     return false;

@@ -39,17 +39,21 @@ export async function addTestResultToCalendar(
   topic: string,
   score: number, 
   mistakes: string[],
-  totalWords: number
+  totalWords: number,
+  startTime: Date,
+  endTime: Date
 ) {
-  const now = new Date();
-  const endTime = new Date(now.getTime() + 30 * 60000); // 30 mins duration
-
-  const description = `測驗主題: ${topic}\n本次測驗單字數: ${totalWords}\n分數: ${score}分\n\n需要加強的單字:\n${mistakes.length > 0 ? mistakes.join('\n') : '全對！太棒了！'}`;
+  const durationMs = endTime.getTime() - startTime.getTime();
+  const durationMins = Math.floor(durationMs / 60000);
+  const durationSecs = Math.floor((durationMs % 60000) / 1000);
+  const durationText = durationMins > 0 ? `${durationMins} 分 ${durationSecs} 秒` : `${durationSecs} 秒`;
+  
+  const description = `測驗主題: ${topic}\n本次測驗單字數: ${totalWords}\n分數: ${score}分\n學習與測驗總花費時間: ${durationText}\n\n需要加強的單字:\n${mistakes.length > 0 ? mistakes.join('\n') : '全對！太棒了！'}`;
 
   const event = {
     summary: `單字測驗: ${topic} - 成績: ${score}分`,
     description: description,
-    start: { dateTime: now.toISOString() },
+    start: { dateTime: startTime.toISOString() },
     end: { dateTime: endTime.toISOString() },
   };
 

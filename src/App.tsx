@@ -19,6 +19,7 @@ export default function App() {
   const [speakingResults, setSpeakingResults] = useState<Partial<TestResult>[]>([]);
   const [writtenResults, setWrittenResults] = useState<Partial<TestResult>[]>([]);
   const [sessionInfo, setSessionInfo] = useState<{topic: string, level: string} | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isSavingToCalendar, setIsSavingToCalendar] = useState(false);
@@ -74,6 +75,7 @@ export default function App() {
   const handleStart = (generatedWords: Word[], topic: string, level: string) => {
     setWords(generatedWords);
     setSessionInfo({ topic, level });
+    setSessionStartTime(new Date());
     setMode('learning');
   };
 
@@ -109,8 +111,11 @@ export default function App() {
           .filter(r => !r.writtenCorrect)
           .map(r => r.word);
 
+        const endTime = new Date();
+        const startTime = sessionStartTime || new Date(endTime.getTime() - 30 * 60000); // Fallback to 30 mins if null
+
         const calendarId = await getOrCreateCalendar(accessToken, appConfig.calendarName);
-        await addTestResultToCalendar(accessToken, calendarId, sessionInfo.topic, finalScore, mistakes, words.length);
+        await addTestResultToCalendar(accessToken, calendarId, sessionInfo.topic, finalScore, mistakes, words.length, startTime, endTime);
         
         alert('測驗成績已成功儲存至您的 Google 日曆！');
       } catch (error) {
@@ -127,6 +132,7 @@ export default function App() {
     setSpeakingResults([]);
     setWrittenResults([]);
     setSessionInfo(null);
+    setSessionStartTime(null);
     setMode('setup');
   };
 
